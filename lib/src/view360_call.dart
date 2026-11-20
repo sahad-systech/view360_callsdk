@@ -22,6 +22,10 @@ class View360Call {
 
   Future<void> unmute() => controller.unmute();
 
+  Future<void> setSpeakerOn(bool enabled) => controller.setSpeakerOn(enabled);
+
+  Future<void> toggleSpeaker() => controller.toggleSpeaker();
+
   Future<void> disconnect() => controller.disconnect();
 
   void dispose() {

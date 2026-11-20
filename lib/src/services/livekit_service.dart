@@ -11,6 +11,8 @@ class LiveKitService {
 
   bool get isConnected => _room?.connectionState == ConnectionState.connected;
 
+  bool get isSpeakerOn => AudioManager.instance.isSpeakerOutputPreferred;
+
   Future<void> connect({
     required String serverUrl,
     required String token,
@@ -90,6 +92,39 @@ class LiveKitService {
 
     await participant.setMicrophoneEnabled(true);
   }
+
+  Future<void> setSpeakerOn(bool enabled, {bool force = false}) async {
+    if (_room == null) {
+      throw const View360CallException('Not connected to a LiveKit room.');
+    }
+
+    try {
+      log('[LiveKitService] Setting speaker to $enabled (force: $force)...');
+      await AudioManager.instance.setSpeakerOutputPreferred(
+        enabled,
+        force: force,
+      );
+      log('[LiveKitService] Speaker set to $enabled successfully.');
+    } catch (error, stackTrace) {
+      log(
+        '[LiveKitService] Failed to set speaker: $error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      throw View360CallException(
+        'Failed to set speaker to $enabled: $error',
+        cause: error,
+      );
+    }
+  }
+
+  Future<void> setSpeakerphoneOn(bool enabled, {bool force = false}) =>
+      setSpeakerOn(enabled, force: force);
+
+  Future<void> enableSpeaker({bool force = false}) =>
+      setSpeakerOn(true, force: force);
+
+  Future<void> disableSpeaker() => setSpeakerOn(false);
 
   Future<void> disconnect() async {
     final room = _room;

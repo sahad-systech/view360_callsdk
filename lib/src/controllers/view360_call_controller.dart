@@ -48,6 +48,7 @@ class View360CallController extends ChangeNotifier {
         View360CallState(
           status: View360CallStatus.connected,
           roomName: roomName,
+          isSpeakerOn: _liveKitService.isSpeakerOn,
         ),
       );
 
@@ -91,6 +92,25 @@ class View360CallController extends ChangeNotifier {
         isSpeakerOn: _state.isSpeakerOn,
       ),
     );
+  }
+
+  Future<void> setSpeakerOn(bool enabled) async {
+    await _liveKitService.setSpeakerOn(enabled);
+
+    _updateState(
+      View360CallState(
+        status: _state.status,
+        roomName: _state.roomName,
+        isMuted: _state.isMuted,
+        isSpeakerOn: enabled,
+        error: _state.error,
+      ),
+    );
+  }
+
+  Future<void> toggleSpeaker() async {
+    final nextState = !_state.isSpeakerOn;
+    await setSpeakerOn(nextState);
   }
 
   Future<void> disconnect() async {

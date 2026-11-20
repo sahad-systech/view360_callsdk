@@ -21,4 +21,20 @@ class View360CallState {
     this.roomName,
     this.error,
   });
+
+  View360CallState copyWith({
+    View360CallStatus? status,
+    bool? isMuted,
+    bool? isSpeakerOn,
+    String? roomName,
+    String? error,
+  }) {
+    return View360CallState(
+      status: status ?? this.status,
+      isMuted: isMuted ?? this.isMuted,
+      isSpeakerOn: isSpeakerOn ?? this.isSpeakerOn,
+      roomName: roomName ?? this.roomName,
+      error: error ?? this.error,
+    );
+  }
 }
