@@ -8,7 +8,8 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
-  firebase_messaging: ^17.0.1
+  firebase_core: ">=2.0.0 <6.0.0"
+  firebase_messaging: ">=14.0.0 <18.0.0"
   flutter:
     sdk: flutter
   livekit_client: ^2.5.0
