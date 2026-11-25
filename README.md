@@ -4,7 +4,7 @@ A Flutter SDK for handling audio/video calls with LiveKit and Firebase Cloud Mes
 
 ## Features
 
-- **FCM Token Retrieval**: Fetch and cache FCM device tokens.
+- **FCM Token Retrieval & Backend Registration**: Fetch device FCM tokens and automatically register them with your backend API via `POST /api/users/fcm-token`.
 - **Incoming Call Handling**: Automatically parse incoming-call events from FCM payloads.
 - **Foreground, Background & Terminated States**:
   - Receive incoming calls while the app is in the foreground (`FirebaseMessaging.onMessage`).
@@ -40,7 +40,9 @@ void main() async {
 }
 ```
 
-### 2. Initialize View360Call and Subscribe to Incoming Calls
+### 2. Initialize View360Call and Register FCM Token
+
+Provide `apiBaseUrl` (or let it derive from `serverUrl`), `userId`, and optional `deviceId`:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -63,12 +65,15 @@ class _CallScreenState extends State<CallScreen> {
     call = View360Call(
       config: View360CallConfig(
         serverUrl: 'wss://your-livekit-url.com',
+        apiBaseUrl: 'https://your-api-backend.com', // Base URL for /api/users/fcm-token
+        userId: 'YOUR_USER_ID_OR_NAME_OR_EMAIL',
+        deviceId: 'optional-device-id',
         tokenProvider: ({
           required String roomName,
           required String participantName,
         }) async {
-          // Fetch token from backend
-          return 'token';
+          // Fetch LiveKit room token from backend
+          return 'livekit-token';
         },
       ),
     );
@@ -82,7 +87,7 @@ class _CallScreenState extends State<CallScreen> {
       debugPrint('Timestamp: ${event.timestamp}');
     };
 
-    // Initialize SDK (retrieves FCM token & registers message listeners)
+    // Initialize SDK (retrieves FCM token, registers to backend, & registers message listeners)
     call.initialize();
   }
 
@@ -99,6 +104,45 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 }
+```
+
+---
+
+## FCM Token Backend Registration API
+
+Upon retrieving the FCM device token, `FCMService` automatically sends a `POST` request to register the token with your backend:
+
+- **Method**: `POST`
+- **URL**: `/api/users/fcm-token`
+- **Headers**:
+  ```http
+  Content-Type: application/json
+  ```
+- **Request Body**:
+  ```json
+  {
+    "userId": "YOUR_USER_ID_OR_NAME_OR_EMAIL",
+    "fcmToken": "PASTE_DEVICE_FCM_TOKEN",
+    "deviceType": "android",
+    "deviceId": "optional-device-id"
+  }
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "FCM token registered successfully"
+  }
+  ```
+
+You can also manually register tokens using:
+```dart
+await FCMService.sendTokenToServer(
+  fcmToken: token,
+  userId: 'user-id',
+  baseUrl: 'https://your-api-backend.com',
+  deviceId: 'optional-device-id',
+);
 ```
 
 ---

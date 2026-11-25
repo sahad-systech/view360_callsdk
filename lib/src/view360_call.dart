@@ -14,6 +14,7 @@ class View360Call {
   late final View360CallController controller;
   final FCMService _fcmService;
   final FCMMessageHandlerService _fcmMessageHandler;
+  final View360CallConfig config;
   bool _isInitialized = false;
 
   void Function(IncomingCallEvent event)? _onIncomingCall;
@@ -25,13 +26,22 @@ class View360Call {
   static Future<void> Function(IncomingCallEvent event)? onBackgroundIncomingCall;
 
   View360Call({
-    required View360CallConfig config,
+    required this.config,
     FCMService? fcmService,
     FCMMessageHandlerService? fcmMessageHandler,
-  })  : _fcmService = fcmService ?? FCMService(),
+  })  : _fcmService = fcmService ??
+            FCMService(
+              baseUrl: config.apiBaseUrl ?? _deriveHttpBaseUrl(config.serverUrl),
+              userId: config.userId,
+              deviceId: config.deviceId,
+              deviceType: config.deviceType,
+            ),
         _fcmMessageHandler = fcmMessageHandler ?? FCMMessageHandlerService() {
     controller = View360CallController(config: config);
   }
+
+  /// The underlying FCM service used for token retrieval and backend registration.
+  FCMService get fcmService => _fcmService;
 
   /// The cached FCM device token, available after [initialize] is called.
   String? get fcmToken => _fcmService.fcmToken;
@@ -65,16 +75,34 @@ class View360Call {
   /// Initializes the SDK instance.
   ///
   /// - Retrieves the FCM device token.
+  /// - Registers the FCM token with the backend server via `POST /api/users/fcm-token`
+  ///   if `userId` and `baseUrl` (or `config.apiBaseUrl`) are provided.
   /// - Sets up foreground FCM message listeners (`FirebaseMessaging.onMessage`).
   /// - Sets up background notification tap listeners (`FirebaseMessaging.onMessageOpenedApp`).
   /// - Checks for terminated app launch messages (`FirebaseMessaging.getInitialMessage`).
   ///
   /// The host application MUST initialize Firebase before calling this method.
-  Future<void> initialize({String? vapidKey}) async {
+  Future<void> initialize({
+    String? vapidKey,
+    String? userId,
+    String? baseUrl,
+    String? deviceId,
+    String? deviceType,
+  }) async {
     if (_isInitialized) return;
 
     try {
-      await _fcmService.initialize(vapidKey: vapidKey);
+      final effectiveUserId = userId ?? config.userId;
+      final effectiveBaseUrl =
+          baseUrl ?? config.apiBaseUrl ?? _deriveHttpBaseUrl(config.serverUrl);
+
+      await _fcmService.initialize(
+        vapidKey: vapidKey,
+        userId: effectiveUserId,
+        baseUrl: effectiveBaseUrl,
+        deviceId: deviceId ?? config.deviceId,
+        deviceType: deviceType ?? config.deviceType,
+      );
     } catch (e, stackTrace) {
       log(
         'View360Call FCM token retrieval failed: $e',
@@ -88,6 +116,18 @@ class View360Call {
     );
 
     _isInitialized = true;
+  }
+
+  /// Helper to derive an HTTP base URL from a LiveKit WebSocket server URL.
+  static String? _deriveHttpBaseUrl(String serverUrl) {
+    var url = serverUrl.trim();
+    if (url.isEmpty) return null;
+    if (url.startsWith('wss://')) {
+      url = 'https://${url.substring(6)}';
+    } else if (url.startsWith('ws://')) {
+      url = 'http://${url.substring(5)}';
+    }
+    return url.replaceAll(RegExp(r'/+$'), '');
   }
 
   /// Public top-level static background message handler for FlutterFire.
