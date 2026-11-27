@@ -10,6 +10,7 @@ import 'services/fcm_message_handler.dart';
 import 'services/fcm_service.dart';
 import 'services/incoming_call_parser.dart';
 
+@pragma('vm:entry-point')
 class View360Call {
   late final View360CallController controller;
   final FCMService _fcmService;

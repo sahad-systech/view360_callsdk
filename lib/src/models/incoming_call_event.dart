@@ -18,6 +18,9 @@ class IncomingCallEvent {
   /// The timestamp when the call was initiated.
   final DateTime timestamp;
 
+  /// Optional display name of the caller.
+  final String? callerName;
+
   /// The raw payload received from FCM data.
   final Map<String, dynamic> rawPayload;
 
@@ -27,6 +30,7 @@ class IncomingCallEvent {
     required this.receiverId,
     required this.roomName,
     required this.timestamp,
+    this.callerName,
     this.rawPayload = const {},
   });
 
@@ -38,6 +42,7 @@ class IncomingCallEvent {
       'receiverId': receiverId,
       'roomName': roomName,
       'timestamp': timestamp.toIso8601String(),
+      if (callerName != null) 'callerName': callerName,
       'rawPayload': rawPayload,
     };
   }
@@ -51,7 +56,8 @@ class IncomingCallEvent {
           callerId == other.callerId &&
           receiverId == other.receiverId &&
           roomName == other.roomName &&
-          timestamp == other.timestamp;
+          timestamp == other.timestamp &&
+          callerName == other.callerName;
 
   @override
   int get hashCode =>
@@ -59,10 +65,11 @@ class IncomingCallEvent {
       callerId.hashCode ^
       receiverId.hashCode ^
       roomName.hashCode ^
-      timestamp.hashCode;
+      timestamp.hashCode ^
+      callerName.hashCode;
 
   @override
   String toString() {
-    return 'IncomingCallEvent(callId: $callId, callerId: $callerId, receiverId: $receiverId, roomName: $roomName, timestamp: $timestamp)';
+    return 'IncomingCallEvent(callId: $callId, callerId: $callerId, receiverId: $receiverId, roomName: $roomName, timestamp: $timestamp, callerName: $callerName)';
   }
 }
